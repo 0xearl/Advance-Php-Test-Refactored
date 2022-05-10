@@ -1,6 +1,7 @@
 <?php
 
 include_once('../vendor/autoload.php');
+include_once('../include/utils.php');
 include_once('autoload.php');
 
 //lets make a cute little router here
