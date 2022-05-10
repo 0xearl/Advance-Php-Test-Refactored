@@ -10,4 +10,6 @@ if($uri[2] === '' || $uri[2] == 'report'){ //if the user is on the index page
     include_once('Views/report.php');
 }else if($uri[2] == 'export') {
     include_once('Views/export.php');
+}else {
+    http_response_code(404);
 }
