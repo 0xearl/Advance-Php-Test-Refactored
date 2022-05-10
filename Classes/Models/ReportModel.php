@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Classes\Models;
 
@@ -15,34 +15,23 @@ class ReportModel
         $this->connection = $this->db->getConnection();
     }
 
-    public function getBest3PointShooters() {
+    public function getBest3PointShooters()
+    {
         $good_shooters = [];
-        $sql = "SELECT id, name, team_code, pos, number FROM roster";
+        $sql = "SELECT roster.name, player_totals.3pt, player_totals.3pt_attempted, age, team.name as team_name
+                FROM player_totals
+                INNER JOIN roster ON (roster.id = player_totals.player_id)
+                Right JOIN team on (team.code = roster.team_code)
+                Where age >= 30 and 3pt != 0 and 3pt_attempted != 0;";
         $data = $this->connection->query($sql);
-        $players = $data->fetch_all(MYSQLI_ASSOC);
-        foreach($players as $player) {
-            $sql = "SELECT 3pt, 3pt_attempted, age FROM player_totals WHERE player_id = '{$player['id']}' and 3pt_attempted > 0 and 3pt > 0";
-            $team_sql = "SELECT name from team WHERE code = '{$player['team_code']}'";
-            $team_sql = $this->connection->query($team_sql);
-            $team = $team_sql->fetch_assoc()['name'];
-            $data = $this->connection->query($sql);
-            $data = $data->fetch_assoc();
-            $data = $data != null ? array_merge($data, ['team' => $team]) : [];
-            //insert the team to the player_totals array
-            if($data['age'] >= 30) {
-                $shoot_percentage = ($data['3pt'] / $data['3pt_attempted']) * 100;
-                if(round($shoot_percentage) >= 35) {
-                    $good_shooters[] = $data;
-                }
+        $result = $data->fetch_all(MYSQLI_ASSOC);
+        foreach($result as $res) {
+            $shooting_percentage = ($res['3pt'] / $res['3pt_attempted']) * 100;
+            if(round($shooting_percentage,2) > 35) {
+                $good_shooters[] = array_merge($res, ['shooting_percentage' =>  intval(round($shooting_percentage))]);
             }
         }
-        dd($good_shooters);
-        
-    }
 
-    private function getTotalStats($id) {
-        $sql = "SELECT * FROM player_totals WHERE player_id = '{$id}'";
-        $data = $this->connection->query($sql);
+        return collect($good_shooters)->sortBy('shooting_percentage')->reverse()->values()->all();
     }
-
 }
